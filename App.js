@@ -1,26 +1,78 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { View, SafeAreaView, Text, TextInput, Button, FlatList, TouchableOpacity } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Style from './components/Style'
 
 export default function App(){
 const [task,setTask] = useState("");
 const [taskList, setTaskList] = useState([])
+const [savedTaskList, setSavedTaskList] = useState([])
 
-  const addTask = () => {
-   setTaskList([...taskList, { item: task, id: Date.now().toString(), valid: true }]);
-   setTask("");
-  }
+useEffect(() => {
+	const carregarTasks = async () => {
+		try {
+			const savedData = await AsyncStorage.getItem('@tasks');
+			if (savedData !== null) {
+				const parsedData = JSON.parse(savedData);
+				setTaskList(parsedData);
+				setSavedTaskList(parsedData);
+			}
+		} catch (e) {
+			console.error('Erro ao carregar tasks');
+		}
+	};
 
-  const delTask = (id) => {
-    setTaskList(taskList.filter((task) => task.id !== id));
-  }
+	carregarTasks();
+}, []);
 
-  const toggleValid = (id) => {
-  setTaskList(
-    taskList.map((task) =>
-      task.id === id ? { ...task, valid: !task.valid } : task
-    )
-  )
+const addTask = async () => {
+	try {
+		const newTask = { item: task, id: Date.now().toString(), valid: true };
+		const updatedTasks = [...taskList, newTask];
+
+		// Salvando no AsyncStorage (JSON)
+		await AsyncStorage.setItem('@tasks', JSON.stringify(updatedTasks));
+
+		// Atualizando o estado da lista
+		setTaskList(updatedTasks);
+		setSavedTaskList(updatedTasks);
+		setTask('');
+	} catch (e) {
+		console.error('Deu B.O');
+	}
+};
+
+const delTask = async (id) => {
+	try {
+		const updatedTasks = taskList.filter((task) => task.id !== id);
+		
+		// Atualizar o AsyncStorage
+		await AsyncStorage.setItem('@tasks', JSON.stringify(updatedTasks));
+
+		// Atualizar o estado
+		setTaskList(updatedTasks);
+		setSavedTaskList(updatedTasks);
+	} catch (e) {
+		console.error('Erro ao apagar task');
+	}
+};
+
+
+const toggleValid = async (id) => {
+	try {
+		const updatedTasks = taskList.map((task) =>
+			task.id === id ? { ...task, valid: !task.valid } : task
+		);
+
+		// Atualizar no AsyncStorage
+		await AsyncStorage.setItem('@tasks', JSON.stringify(updatedTasks));
+
+		// Atualizar o estado
+		setTaskList(updatedTasks);
+		setSavedTaskList(updatedTasks);
+	} catch (e) {
+		console.error('Erro ao atualizar task');
+	}
 };
 
   const Render = ({ item }) => {
@@ -54,7 +106,7 @@ const [taskList, setTaskList] = useState([])
       onPress={addTask}
       />
       <FlatList 
-      data={taskList}
+      data={savedTaskList}
       renderItem={Render}
       keyExtractor={(item) => item.id}
       />
