@@ -1,13 +1,17 @@
+//Bloco inicial onde importamos todas as bibliotecas e componentes utilizados dela
 import React, { useState, useEffect } from 'react'
 import { View, SafeAreaView, Text, TextInput, Button, FlatList, TouchableOpacity } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Style from './components/Style'
 
+
 export default function App(){
+//Definimos todos os estados de maneira dinamica para renderização
 const [task,setTask] = useState("");
 const [taskList, setTaskList] = useState([])
 const [savedTaskList, setSavedTaskList] = useState([])
 
+//O useEffect carrega as tarefas salvas no armazenamento local assim que o app inicia.
 useEffect(() => {
 	const carregarTasks = async () => {
 		try {
@@ -25,15 +29,14 @@ useEffect(() => {
 	carregarTasks();
 }, []);
 
+//Função princípal de inclusão de task, criamos um objeto com as caracteristicas de nossa task
+//Utilizamos de uma array onde juntamos a lista de task com a nova task criada
+//Setamos e salvamos os dados nas arrays de estado préviamente ciradas
 const addTask = async () => {
 	try {
 		const newTask = { item: task, id: Date.now().toString(), valid: true };
 		const updatedTasks = [...taskList, newTask];
-
-		// Salvando no AsyncStorage (JSON)
 		await AsyncStorage.setItem('@tasks', JSON.stringify(updatedTasks));
-
-		// Atualizando o estado da lista
 		setTaskList(updatedTasks);
 		setSavedTaskList(updatedTasks);
 		setTask('');
@@ -42,14 +45,11 @@ const addTask = async () => {
 	}
 };
 
+//Função de deletar tasks, buscamos/filtramos as tasks por id e assim atualizamos as listas e o asyncStorage
 const delTask = async (id) => {
 	try {
 		const updatedTasks = taskList.filter((task) => task.id !== id);
-		
-		// Atualizar o AsyncStorage
 		await AsyncStorage.setItem('@tasks', JSON.stringify(updatedTasks));
-
-		// Atualizar o estado
 		setTaskList(updatedTasks);
 		setSavedTaskList(updatedTasks);
 	} catch (e) {
@@ -57,17 +57,13 @@ const delTask = async (id) => {
 	}
 };
 
-
+//Função para definir se a task é ou não valida (concluida ou não), apartir de um mapeamento de busca pela array, e assim atualizando o estado de concluido ou não
 const toggleValid = async (id) => {
 	try {
 		const updatedTasks = taskList.map((task) =>
 			task.id === id ? { ...task, valid: !task.valid } : task
 		);
-
-		// Atualizar no AsyncStorage
 		await AsyncStorage.setItem('@tasks', JSON.stringify(updatedTasks));
-
-		// Atualizar o estado
 		setTaskList(updatedTasks);
 		setSavedTaskList(updatedTasks);
 	} catch (e) {
@@ -75,6 +71,7 @@ const toggleValid = async (id) => {
 	}
 };
 
+//Função de renderização utilizando de todos os dados buscados acima
   const Render = ({ item }) => {
     return(
       <View style={item.valid ? Style.normalOpacity : Style.lowOpacity}> 
